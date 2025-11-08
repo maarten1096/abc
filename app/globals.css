@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sw-main: #f7f7f7;
+  --sw-sidebar: #ededed;
+  --sw-accent: #2e2e2e;
+}
+
+.dark {
+  --sw-main: #1a1a1a;
+  --sw-sidebar: #202020;
+  --sw-accent: #ffffff;
+}
