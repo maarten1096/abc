@@ -4,151 +4,103 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from './ThemeProvider';
 import { supabase } from '../lib/supabase';
+import { Session } from '@supabase/supabase-js';
 
 interface Question {
-  question: string;
-  options: string[];
-  answer: string;
-
+    question: string;
+    options: string[];
+    answer: string;
+    explanation?: string;
 }
 
 export default function QuizTool() {
   const { theme } = useTheme();
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [score, setScore] = useState(0);
-  const [quizFinished, setQuizFinished] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const [amount, setAmount] = useState(10);
+  const [difficulty, setDifficulty] = useState('medium');
+  const [questionType, setQuestionType] = useState('multiple-choice');
+  const [timer, setTimer] = useState(false);
+  const [shuffleAnswers, setShuffleAnswers] = useState(false);
+  const [instantFeedback, setInstantFeedback] = useState(true);
+  const [includeExplanations, setIncludeExplanations] = useState(true);
+  const [text, setText] = useState('');
+  const [quiz, setQuiz] = useState<{ questions: Question[] } | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchQuestions = async () => {
-      const { data, error } = await supabase.from('questions').select('*');
-      if (error) {
-        console.error('Error fetching questions:', error);
-      } else {
-        setQuestions(data);
-      }
-      setLoading(false);
-    };
-
-    fetchQuestions();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
   }, []);
 
-  const handleOptionSelect = (option: string) => {
-    if (selectedOption) return; // Prevent changing answer
-
-    setSelectedOption(option);
-    if (option === questions[currentQuestion].answer) {
-      setScore(score + 1);
+  const handleSubmit = async () => {
+    if (!session) {
+      alert('Please log in to use this feature.');
+      return;
+    }
+    setLoading(true);
+    setQuiz(null);
+    try {
+      const response = await fetch('/api/quiz', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text,
+          amount,
+          difficulty,
+          questionType,
+          timer,
+          shuffleAnswers,
+          instantFeedback,
+          includeExplanations,
+          userId: session.user.id,
+        }),
+      });
+      const data = await response.json();
+      setQuiz(data.quiz);
+    } catch (error) {
+      console.error('Error generating quiz:', error);
+    } finally {
+      setLoading(false);
     }
   };
-
-  const handleNextQuestion = () => {
-    setSelectedOption(null);
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      setQuizFinished(true);
-    }
-  };
-
-  const handleRestartQuiz = () => {
-    setCurrentQuestion(0);
-    setSelectedOption(null);
-    setScore(0);
-    setQuizFinished(false);
-  }
-
-  const getButtonColor = (option: string) => {
-    if (!selectedOption) {
-      return theme.sidebar;
-    }
-    if (option === questions[currentQuestion].answer) {
-      return '#28a745'; // Green for correct
-    }
-    if (option === selectedOption) {
-      return '#dc3545'; // Red for incorrect
-    }
-    return theme.sidebar;
-  }
-  
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center" style={{ color: theme.accent }}>
-        <h2 className="text-3xl font-bold mb-4">Loading Quiz...</h2>
-      </div>
-    )
-  }
-
-  if (quizFinished) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center" style={{ color: theme.accent }}>
-        <h2 className="text-3xl font-bold mb-4">Quiz Completed!</h2>
-        <p className="text-xl mb-6">Your score: {score} / {questions.length}</p>
-        <button 
-          onClick={handleRestartQuiz}
-          className="p-3 rounded-lg font-semibold"
-          style={{ backgroundColor: theme.accent, color: theme.sidebar }}
-        >
-          Restart Quiz
-        </button>
-      </div>
-    )
-  }
-
-  if (questions.length === 0) {
-    return (
-        <div className="flex flex-col items-center justify-center h-full text-center" style={{ color: theme.accent }}>
-            <h2 className="text-3xl font-bold mb-4">Error</h2>
-            <p className="text-xl mb-6">Could not load questions. Make sure you have run the schema.sql file in your Supabase project.</p>
-        </div>
-    )
-  }
 
   return (
-    <div className="flex flex-col h-full items-center justify-center" style={{ color: theme.accent }}>
-      <div className='w-full max-w-2xl'>
-        {/* Progress Bar */}
-        <div className='w-full rounded-full h-2.5 mb-4' style={{backgroundColor: theme.sidebar}}>
-            <div className='h-2.5 rounded-full' style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%`, backgroundColor: theme.accent }}></div>
-        </div>
+    <div>
+       <div className="flex items-center space-x-4 mb-4">
+        {/* ... your options form ... */}
+      </div>
+      <textarea
+        className="w-full p-2 rounded-md resize-none overflow-y-auto bg-transparent mb-4"
+        style={{ border: `1.5px solid ${theme.accent}`, color: theme.accent }}
+        placeholder="Enter text to generate a quiz from..."
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={10}
+      />
+      <button onClick={handleSubmit} className="px-4 py-2 rounded-md" style={{ backgroundColor: theme.accent, color: theme.main }} disabled={loading}>
+        {loading ? 'Generating...' : 'Generate Quiz'}
+      </button>
 
-        {/* Question */}
-        <h2 className="text-2xl font-bold mb-6 text-center">{questions[currentQuestion].question}</h2>
-        
-        {/* Options */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {questions[currentQuestion].options.map(option => (
-            <button
-              key={option}
-              className={`p-4 rounded-lg text-left text-lg font-medium transition-transform duration-200 ${selectedOption ? 'transform-none' : 'hover:scale-105'}`}
-              style={{
-                backgroundColor: getButtonColor(option),
-                color: theme.accent,
-                opacity: selectedOption && option !== selectedOption && option !== questions[currentQuestion].answer ? 0.6 : 1,
-              }}
-              onClick={() => handleOptionSelect(option)}
-              disabled={!!selectedOption}
-            >
-              {option}
-            </button>
+      {quiz && (
+        <div className="mt-8">
+          {quiz.questions.map((q, i) => (
+            <div key={i} className="mb-6 p-4 rounded-md" style={{ border: `1.5px solid ${theme.accent}` }}>
+              <p className="font-bold" style={{ color: theme.accent }}>{i + 1}. {q.question}</p>
+              <div className="mt-2 space-y-2">
+                {q.options.map((opt, j) => (
+                    <button key={j} className="block w-full text-left p-2 rounded-md" style={{backgroundColor: theme.sidebar, color: theme.accent}}>
+                        {opt}
+                    </button>
+                ))}
+              </div>
+              {/* You can add logic here to show answer and explanation based on user interaction */}
+            </div>
           ))}
         </div>
-
-        {/* Next Button */}
-        {selectedOption && (
-          <div className="text-center">
-            <button 
-              onClick={handleNextQuestion}
-              className="p-3 rounded-lg font-semibold w-full md:w-auto"
-              style={{ backgroundColor: theme.accent, color: theme.sidebar }}
-             >
-              {currentQuestion < questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
-            </button>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

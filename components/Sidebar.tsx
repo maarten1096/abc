@@ -10,6 +10,7 @@ import { Session } from '@supabase/supabase-js';
 const tools = [
   { id: 'summary', name: 'Summary', icon: '🧠' },
   { id: 'quiz', name: 'Quiz', icon: '🧩' },
+  { id: 'flashcards', name: 'Flashcards', icon: '🃏' },
   { id: 'whiteboard', name: 'Whiteboard', icon: '🖼️' },
   { id: 'search', name: 'Search', icon: '🔍' },
 ];
@@ -17,8 +18,35 @@ const tools = [
 interface Recent {
     id: string;
     title: string;
-    type: string;
+    tool: string;
+    created_at: string;
 }
+
+const timeAgo = (date: string) => {
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) {
+        return Math.floor(interval) + "y ago";
+    }
+    interval = seconds / 2592000;
+    if (interval > 1) {
+        return Math.floor(interval) + "mo ago";
+    }
+    interval = seconds / 86400;
+    if (interval > 1) {
+        return Math.floor(interval) + "d ago";
+    }
+    interval = seconds / 3600;
+    if (interval > 1) {
+        return Math.floor(interval) + "h ago";
+    }
+    interval = seconds / 60;
+    if (interval > 1) {
+        return Math.floor(interval) + "m ago";
+    }
+    return Math.floor(seconds) + "s ago";
+};
 
 export default function Sidebar({
   isCollapsed,
@@ -56,7 +84,7 @@ export default function Sidebar({
       if (session?.user) {
         const { data, error } = await supabase
           .from('recents')
-          .select('id, title, type')
+          .select('id, title, tool, created_at')
           .eq('user_id', session.user.id)
           .order('created_at', { ascending: false })
           .limit(10);
@@ -118,9 +146,15 @@ export default function Sidebar({
                     ) : (
                         recents.map(recent => (
                             <li key={recent.id}>
-                                <button className='w-full flex items-center p-2 text-sm' style={{color: theme.accent}}>
-                                    <span className='text-lg'>{recent.type === 'chat' ? '💬' : '📝'}</span>
-                                    <span className={`ml-4 truncate ${isCollapsed ? 'hidden' : 'block'}`}>{recent.title}</span>
+                                <button className='w-full flex flex-col items-start p-2 text-sm' style={{color: theme.accent}} onClick={() => console.log("Clicked recent:", recent)}>
+                                    <div className="flex items-center">
+                                        <span className='text-lg'>{recent.tool === 'summary' ? '🧠' : recent.tool === 'quiz' ? '🧩' : '🃏'}</span>
+                                        <span className={`ml-4 font-bold truncate ${isCollapsed ? 'hidden' : 'block'}`}>{recent.title}</span>
+                                    </div>
+                                    <div className={`ml-10 text-xs ${isCollapsed ? 'hidden' : 'block'}`}>
+                                        <span>({recent.tool})</span>
+                                        <span className="ml-2">{timeAgo(recent.created_at)}</span>
+                                    </div>
                                 </button>
                             </li>
                         ))

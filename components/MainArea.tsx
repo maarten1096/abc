@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import SummaryTool from './SummaryTool';
 import QuizTool from './QuizTool';
+import FlashcardTool from './FlashcardTool';
 import ChatInput from './ChatInput';
 import Search from './Search';
 import { useTheme } from './ThemeProvider';
@@ -60,6 +61,7 @@ export default function MainArea({ activeTool }: { activeTool: string }) {
       <main className="flex-1 p-8" style={{ backgroundColor: theme.main }}>
         {activeTool === 'summary' && <SummaryTool />}
         {activeTool === 'quiz' && <QuizTool />}
+        {activeTool === 'flashcards' && <FlashcardTool />}
         {activeTool === 'whiteboard' && <WhiteboardTool />}
         {activeTool === 'search' && <Search />}
       </main>
