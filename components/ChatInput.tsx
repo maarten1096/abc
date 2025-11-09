@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useChat } from '@ai-sdk/react';
+import { useChat } from 'ai/react';
 import { useTheme } from './ThemeProvider';
 import { useRef, useEffect, useState } from 'react';
 
