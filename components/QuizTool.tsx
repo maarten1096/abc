@@ -1,33 +1,39 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from './ThemeProvider';
+import { supabase } from '../lib/supabase';
 
-const questions = [
-  {
-    question: 'What is the capital of France?',
-    options: ['London', 'Paris', 'Berlin', 'Madrid'],
-    answer: 'Paris',
-  },
-  {
-    question: 'Which planet is known as the Red Planet?',
-    options: ['Venus', 'Mars', 'Jupiter', 'Saturn'],
-    answer: 'Mars',
-  },
-    {
-    question: 'What is the largest mammal?',
-    options: ['Elephant', 'Blue Whale', 'Giraffe', 'Great White Shark'],
-    answer: 'Blue Whale',
-  },
-];
+interface Question {
+  question: string;
+  options: string[];
+  answer: string;
+
+}
 
 export default function QuizTool() {
   const { theme } = useTheme();
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [score, setScore] = useState(0);
   const [quizFinished, setQuizFinished] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      const { data, error } = await supabase.from('questions').select('*');
+      if (error) {
+        console.error('Error fetching questions:', error);
+      } else {
+        setQuestions(data);
+      }
+      setLoading(false);
+    };
+
+    fetchQuestions();
+  }, []);
 
   const handleOptionSelect = (option: string) => {
     if (selectedOption) return; // Prevent changing answer
@@ -66,6 +72,14 @@ export default function QuizTool() {
     }
     return theme.sidebar;
   }
+  
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center" style={{ color: theme.accent }}>
+        <h2 className="text-3xl font-bold mb-4">Loading Quiz...</h2>
+      </div>
+    )
+  }
 
   if (quizFinished) {
     return (
@@ -80,6 +94,15 @@ export default function QuizTool() {
           Restart Quiz
         </button>
       </div>
+    )
+  }
+
+  if (questions.length === 0) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center" style={{ color: theme.accent }}>
+            <h2 className="text-3xl font-bold mb-4">Error</h2>
+            <p className="text-xl mb-6">Could not load questions. Make sure you have run the schema.sql file in your Supabase project.</p>
+        </div>
     )
   }
 
