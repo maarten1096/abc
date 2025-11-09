@@ -1,27 +1,29 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { ThemeProvider } from "@/components/ThemeProvider";
+'use client'
 
-const inter = Inter({ subsets: ["latin"] });
+import './globals.css'
+import { useState } from 'react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { SessionContextProvider } from '@supabase/auth-helpers-react'
 
-export const metadata: Metadata = {
-  title: "StudyWeb",
-  description: "Your AI-powered study partner",
-};
+import { ThemeProvider } from '@/components/ThemeProvider'
+import { Database } from '@/lib/db_types'
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
+  const [supabase] = useState(() => createClientComponentClient<Database>())
+
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+      <body>
+        <SessionContextProvider supabaseClient={supabase}>
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
+        </SessionContextProvider>
       </body>
     </html>
-  );
+  )
 }

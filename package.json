@@ -10,6 +10,9 @@
     "export": "next build"
   },
   "dependencies": {
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/auth-helpers-react": "^0.5.0",
+    "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/supabase-js": "^2.80.0",
     "autoprefixer": "^10.4.21",
     "framer-motion": "^12.23.24",
