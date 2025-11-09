@@ -1,14 +1,15 @@
 
 'use client';
 
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
 import { useTheme } from './ThemeProvider';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 export default function ChatInput() {
-  const { messages, input, handleInputChange, handleSubmit } = useChat();
+  const { messages, append } = useChat();
   const { theme } = useTheme();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [input, setInput] = useState('');
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -17,6 +18,17 @@ export default function ChatInput() {
       textarea.style.height = `${textarea.scrollHeight}px`;
     }
   }, [input]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    append({ role: 'user', content: input });
+    setInput('');
+  };
 
   return (
     <div>

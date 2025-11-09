@@ -63,6 +63,8 @@ export default function Sidebar({
   const [session, setSession] = useState<Session | null>(null);
   const [recents, setRecents] = useState<Recent[]>([]);
   const [loadingRecents, setLoadingRecents] = useState(true);
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -109,6 +111,10 @@ export default function Sidebar({
     });
   };
 
+  const filteredRecents = recents.filter(recent =>
+    recent.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div
       className={`flex flex-col text-white transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}
@@ -139,27 +145,47 @@ export default function Sidebar({
               </ul>
             </li>
             <li className="px-4 py-2 mt-4">
+              <div className="flex items-center justify-between">
                 <h2 className={`font-bold text-lg ${isCollapsed ? 'hidden' : 'block'}`} style={{ color: theme.accent }}>Recents</h2>
-                <ul className='mt-2'>
-                    {loadingRecents ? (
-                        <li className={`p-2 ${isCollapsed ? 'hidden' : 'block'}`} style={{color: theme.accent}}>Loading...</li>
-                    ) : (
-                        recents.map(recent => (
-                            <li key={recent.id}>
-                                <button className='w-full flex flex-col items-start p-2 text-sm' style={{color: theme.accent}} onClick={() => console.log("Clicked recent:", recent)}>
-                                    <div className="flex items-center">
-                                        <span className='text-lg'>{recent.tool === 'summary' ? '🧠' : recent.tool === 'quiz' ? '🧩' : '🃏'}</span>
-                                        <span className={`ml-4 font-bold truncate ${isCollapsed ? 'hidden' : 'block'}`}>{recent.title}</span>
-                                    </div>
-                                    <div className={`ml-10 text-xs ${isCollapsed ? 'hidden' : 'block'}`}>
-                                        <span>({recent.tool})</span>
-                                        <span className="ml-2">{timeAgo(recent.created_at)}</span>
-                                    </div>
-                                </button>
-                            </li>
-                        ))
-                    )}
-                </ul>
+                <div>
+                  <button onClick={() => {}} className={`p-1 rounded-md ${isCollapsed ? 'hidden' : 'block'}`} style={{ color: theme.accent }}>
+                    <span>+</span>
+                  </button>
+                  <button onClick={() => setSearchVisible(!searchVisible)} className={`p-1 rounded-md ${isCollapsed ? 'hidden' : 'block'}`} style={{ color: theme.accent }}>
+                    <span>🔍</span>
+                  </button>
+                </div>
+              </div>
+              {searchVisible && !isCollapsed && (
+                <input
+                  type="text"
+                  placeholder="Search recents..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full p-1 mt-2 rounded-md bg-transparent"
+                  style={{ border: `1.5px solid ${theme.accent}`, color: theme.accent }}
+                />
+              )}
+              <ul className='mt-2'>
+                {loadingRecents ? (
+                  <li className={`p-2 ${isCollapsed ? 'hidden' : 'block'}`} style={{color: theme.accent}}>Loading...</li>
+                ) : (
+                  filteredRecents.map(recent => (
+                    <li key={recent.id}>
+                      <button className='w-full flex flex-col items-start p-2 text-sm' style={{color: theme.accent}} onClick={() => console.log("Clicked recent:", recent)}>
+                        <div className="flex items-center">
+                          <span className='text-lg'>{recent.tool === 'summary' ? '🧠' : recent.tool === 'quiz' ? '🧩' : '🃏'}</span>
+                          <span className={`ml-4 font-bold truncate ${isCollapsed ? 'hidden' : 'block'}`}>{recent.title}</span>
+                        </div>
+                        <div className={`ml-10 text-xs ${isCollapsed ? 'hidden' : 'block'}`}>
+                          <span>({recent.tool})</span>
+                          <span className="ml-2">{timeAgo(recent.created_at)}</span>
+                        </div>
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
             </li>
           </ul>
         </nav>

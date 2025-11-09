@@ -1,24 +1,16 @@
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GoogleGenerativeAIStream, StreamingTextResponse } from 'ai';
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
+import { streamText } from 'ai';
+import { google } from '@ai-sdk/google';
 
 export const runtime = 'edge';
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
-  const geminiStream = await genAI
-    .getGenerativeModel({ model: 'gemini-pro' })
-    .generateContentStream({
-      contents: [
-        ...messages.map((message: any) => ({
-          role: message.role,
-          parts: [{ text: message.content }],
-        })),
-      ],
-    });
+  const result = await streamText({
+    model: google('models/gemini-pro'),
+    messages: messages,
+  });
 
-  return new StreamingTextResponse(GoogleGenerativeAIStream(geminiStream));
+  return result.toTextStreamResponse();
 }
