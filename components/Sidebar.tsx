@@ -7,12 +7,29 @@ import ProfileMenu from './ProfileMenu';
 import { supabase } from '../lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
+// Placeholder icons - we'll replace these with a proper library later
+const icons = {
+  summary: 'S',
+  quiz: 'Q',
+  flashcards: 'F',
+  whiteboard: 'W',
+  search: '?',
+  tools: 'T',
+  classes: 'C',
+  agenda: 'A',
+  recents: 'R',
+  add: '+',
+  searchRecents: '?_',
+  login: '→',
+  menu: '☰',
+  close: '✕',
+  arrow: '>'
+};
+
 const tools = [
-  { id: 'summary', name: 'Summary', icon: '🧠' },
-  { id: 'quiz', name: 'Quiz', icon: '🧩' },
-  { id: 'flashcards', name: 'Flashcards', icon: '🃏' },
-  { id: 'whiteboard', name: 'Whiteboard', icon: '🖼️' },
-  { id: 'search', name: 'Search', icon: '🔍' },
+  { id: 'summary', name: 'Summary', icon: icons.summary },
+  { id: 'quiz', name: 'Quiz', icon: icons.quiz },
+  { id: 'flashcards', name: 'Flashcards', icon: icons.flashcards },
 ];
 
 interface Recent {
@@ -65,6 +82,8 @@ export default function Sidebar({
   const [loadingRecents, setLoadingRecents] = useState(true);
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeSection, setActiveSection] = useState('tools');
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -105,101 +124,112 @@ export default function Sidebar({
     fetchRecents();
   }, [session]);
 
-  const handleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-    });
-  };
 
   const filteredRecents = recents.filter(recent =>
     recent.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const renderSection = (id: string, name: string, icon: string, content: React.ReactNode) => (
+    <li className="px-4 py-2">
+      <button onClick={() => setActiveSection(activeSection === id ? '' : id)} className="w-full flex items-center justify-between">
+          <div className="flex items-center">
+            <span className="text-2xl" style={{ color: theme.accent }}>{icon}</span>
+            <span className={`ml-4 font-bold text-lg ${isCollapsed ? 'hidden' : 'block'}`} style={{ color: theme.accent }}>{name}</span>
+          </div>
+          <span className={`transform transition-transform duration-200 ${activeSection === id ? 'rotate-90' : ''} ${isCollapsed ? 'hidden' : 'block'}`} style={{ color: theme.accent }}>{icons.arrow}</span>
+      </button>
+      <div className={`mt-2 overflow-hidden transition-all duration-300 ${activeSection === id ? 'max-h-screen' : 'max-h-0'}`}>
+        {content}
+      </div>
+    </li>
+  );
+
+
+  const toolsContent = (
+    <ul className="mt-2">
+      {tools.map(tool => (
+        <li key={tool.id}
+            className={`rounded-md transition-colors duration-200 ${activeTool === tool.id ? 'bg-accent' : ''}`}>
+          <button
+            onClick={() => setActiveTool(tool.id)}
+            className="w-full flex items-center p-2"
+            style={{ color: activeTool === tool.id ? theme.sidebar : theme.accent }}
+          >
+            <span className="text-2xl">{tool.icon}</span>
+            <span className={`ml-4 ${isCollapsed ? 'hidden' : 'block'}`}>{tool.name}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+
+  const recentsContent = (
+    <>
+    <div className={`flex items-center justify-between ${isCollapsed ? 'hidden' : 'block'}`}>
+        <div>
+            <button onClick={() => {}} className={'p-1 rounded-md'} style={{ color: theme.accent }}>
+                <span>{icons.add}</span>
+            </button>
+            <button onClick={() => setSearchVisible(!searchVisible)} className={'p-1 rounded-md'} style={{ color: theme.accent }}>
+                <span>{icons.searchRecents}</span>
+            </button>
+        </div>
+    </div>
+    {searchVisible && !isCollapsed && (
+        <input
+            type="text"
+            placeholder="Search recents..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-1 mt-2 rounded-md bg-transparent"
+            style={{ border: `1.5px solid ${theme.accent}`, color: theme.accent }}
+        />
+    )}
+    <ul className='mt-2'>
+        {loadingRecents ? (
+            <li className={`p-2 ${isCollapsed ? 'hidden' : 'block'}`} style={{color: theme.accent}}>Loading...</li>
+        ) : (
+            filteredRecents.map(recent => (
+            <li key={recent.id}>
+                <button className='w-full flex flex-col items-start p-2 text-sm' style={{color: theme.accent}} onClick={() => console.log("Clicked recent:", recent)}>
+                <div className="flex items-center">
+                    <span className='text-lg'>{recent.tool === 'summary' ? icons.summary : recent.tool === 'quiz' ? icons.quiz : icons.flashcards}</span>
+                    <span className={`ml-4 font-bold truncate ${isCollapsed ? 'hidden' : 'block'}`}>{recent.title}</span>
+                </div>
+                <div className={`ml-10 text-xs ${isCollapsed ? 'hidden' : 'block'}`}>
+                    <span>({recent.tool})</span>
+                    <span className="ml-2">{timeAgo(recent.created_at)}</span>
+                </div>
+                </button>
+            </li>
+            ))
+        )}
+    </ul>
+    </>
+  );
+
 
   return (
     <div
       className={`flex flex-col text-white transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}
       style={{ backgroundColor: theme.sidebar }}
     >
-      <div className="flex-1">
-        <button onClick={toggleSidebar} className="p-4 h-16 flex items-center justify-center">
-          <span style={{ color: theme.accent }}>{isCollapsed ? '☰' : '✕'}</span>
-        </button>
-        <nav className="mt-4">
-          <ul>
-            <li className="px-4 py-2">
-              <h2 className={`font-bold text-lg ${isCollapsed ? 'hidden' : 'block'}`} style={{ color: theme.accent }}>Tools</h2>
-              <ul className="mt-2">
-                {tools.map(tool => (
-                  <li key={tool.id} 
-                      className={`rounded-md transition-colors duration-200 ${activeTool === tool.id ? 'bg-accent' : ''}`}>
-                    <button 
-                      onClick={() => setActiveTool(tool.id)} 
-                      className="w-full flex items-center p-2" 
-                      style={{ color: activeTool === tool.id ? theme.sidebar : theme.accent }}
-                    >
-                      <span className="text-2xl">{tool.icon}</span>
-                      <span className={`ml-4 ${isCollapsed ? 'hidden' : 'block'}`}>{tool.name}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </li>
-            <li className="px-4 py-2 mt-4">
-              <div className="flex items-center justify-between">
-                <h2 className={`font-bold text-lg ${isCollapsed ? 'hidden' : 'block'}`} style={{ color: theme.accent }}>Recents</h2>
-                <div>
-                  <button onClick={() => {}} className={`p-1 rounded-md ${isCollapsed ? 'hidden' : 'block'}`} style={{ color: theme.accent }}>
-                    <span>+</span>
-                  </button>
-                  <button onClick={() => setSearchVisible(!searchVisible)} className={`p-1 rounded-md ${isCollapsed ? 'hidden' : 'block'}`} style={{ color: theme.accent }}>
-                    <span>🔍</span>
-                  </button>
-                </div>
-              </div>
-              {searchVisible && !isCollapsed && (
-                <input
-                  type="text"
-                  placeholder="Search recents..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full p-1 mt-2 rounded-md bg-transparent"
-                  style={{ border: `1.5px solid ${theme.accent}`, color: theme.accent }}
-                />
-              )}
-              <ul className='mt-2'>
-                {loadingRecents ? (
-                  <li className={`p-2 ${isCollapsed ? 'hidden' : 'block'}`} style={{color: theme.accent}}>Loading...</li>
-                ) : (
-                  filteredRecents.map(recent => (
-                    <li key={recent.id}>
-                      <button className='w-full flex flex-col items-start p-2 text-sm' style={{color: theme.accent}} onClick={() => console.log("Clicked recent:", recent)}>
-                        <div className="flex items-center">
-                          <span className='text-lg'>{recent.tool === 'summary' ? '🧠' : recent.tool === 'quiz' ? '🧩' : '🃏'}</span>
-                          <span className={`ml-4 font-bold truncate ${isCollapsed ? 'hidden' : 'block'}`}>{recent.title}</span>
-                        </div>
-                        <div className={`ml-10 text-xs ${isCollapsed ? 'hidden' : 'block'}`}>
-                          <span>({recent.tool})</span>
-                          <span className="ml-2">{timeAgo(recent.created_at)}</span>
-                        </div>
-                      </button>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </li>
-          </ul>
-        </nav>
-      </div>
-      <div className="p-2" style={{borderTop: `1px solid ${theme.accent}`}}>
-         {session ? (
-            <ProfileMenu />
-         ) : (
-            <button onClick={handleLogin} className={`w-full flex items-center p-2 rounded-md transition-colors duration-200`} style={{ color: theme.accent }}>
-                <span className="text-2xl">➡️</span>
-                <span className={`ml-4 ${isCollapsed ? 'hidden' : 'block'}`}>Login</span>
+        <div className="flex-1 overflow-y-auto no-scrollbar">
+            <button onClick={toggleSidebar} className="p-4 h-16 flex items-center justify-center">
+            <span style={{ color: theme.accent }}>{isCollapsed ? icons.menu : icons.close}</span>
             </button>
-         )}
-      </div>
+            <nav className="mt-4">
+            <ul>
+                {renderSection('tools', 'Tools', icons.tools, toolsContent)}
+                {renderSection('recents', 'Recents', icons.recents, recentsContent)}
+                {renderSection('classes', 'Classes', icons.classes, <div className={`p-2 ${isCollapsed ? 'hidden' : 'block'}`} style={{color: theme.accent}}>Coming soon!</div>)}
+                {renderSection('agenda', 'Agenda', icons.agenda, <div className={`p-2 ${isCollapsed ? 'hidden' : 'block'}`} style={{color: theme.accent}}>Coming soon!</div>)}
+            </ul>
+            </nav>
+        </div>
+        <div className="p-2" style={{borderTop: `1px solid ${theme.accent}`}}>
+            <ProfileMenu />
+        </div>
     </div>
   );
 }
