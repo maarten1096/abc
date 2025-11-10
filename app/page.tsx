@@ -1,26 +1,31 @@
+
 'use client';
 
 import { useState } from 'react';
-import Sidebar from '@/components/Sidebar';
-import MainArea from '@/components/MainArea';
-import { useTheme } from '@/components/ThemeProvider';
+import Sidebar from '../components/Sidebar';
+import MainArea from '../components/MainArea';
+import { ThemeProvider } from '../components/ThemeProvider';
 
 export default function Home() {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTool, setActiveTool] = useState('summary');
-  const { theme } = useTheme();
+
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: theme.main }}>
-      <Sidebar
-        isCollapsed={isSidebarCollapsed}
-        toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        activeTool={activeTool}
-        setActiveTool={setActiveTool}
-      />
-      <div className="flex flex-col flex-1">
+    <ThemeProvider>
+      <div className="flex h-screen bg-gray-100">
+        <Sidebar
+          isCollapsed={isCollapsed}
+          toggleSidebar={toggleSidebar}
+          activeTool={activeTool}
+          setActiveTool={setActiveTool}
+        />
         <MainArea activeTool={activeTool} />
       </div>
-    </div>
+    </ThemeProvider>
   );
 }
+

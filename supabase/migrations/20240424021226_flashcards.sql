@@ -5,5 +5,3 @@ create table flashcards (
   cards jsonb not null,
   created_at timestamptz default now()
 );
-
-alter table recents add column if not exists tool_id uuid;
