@@ -1,10 +1,24 @@
 
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { supabase } from '../../../lib/supabase';
 
 export async function POST(req: NextRequest) {
   const { text, amount, difficulty, questionType, timer, shuffleAnswers, instantFeedback, includeExplanations, userId } = await req.json();
+
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+      },
+    }
+  );
 
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY as string);
   const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
@@ -30,23 +44,25 @@ export async function POST(req: NextRequest) {
   const title = await model.generateContent(`Generate a short, descriptive title for this text: ${text}`);
   const titleText = await title.response.text();
 
-  const { data: quizData, error: quizError } = await supabase
-    .from('quizzes')
-    .insert([{ user_id: userId, title: titleText, questions: quizJson }])
-    .select('id');
+  if (userId) {
+    const { data: quizData, error: quizError } = await supabase
+      .from('quizzes')
+      .insert([{ user_id: userId, title: titleText, questions: quizJson }])
+      .select('id');
 
-  if (quizError) {
-    return NextResponse.json({ error: quizError.message }, { status: 500 });
-  }
+    if (quizError) {
+      return NextResponse.json({ error: quizError.message }, { status: 500 });
+    }
 
-  const quizId = quizData[0].id;
+    const quizId = quizData[0].id;
 
-  const { error: recentError } = await supabase
-    .from('recents')
-    .insert([{ user_id: userId, title: titleText, tool: 'quiz', tool_id: quizId }]);
+    const { error: recentError } = await supabase
+      .from('recents')
+      .insert([{ user_id: userId, title: titleText, tool: 'quiz', tool_id: quizId }]);
 
-  if (recentError) {
-    console.error('Error inserting into recents:', recentError);
+    if (recentError) {
+      console.error('Error inserting into recents:', recentError);
+    }
   }
 
   return NextResponse.json({ quiz: quizJson, title: titleText });

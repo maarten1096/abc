@@ -1,10 +1,23 @@
 
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { supabase } from '../../../lib/supabase';
 
 export async function POST(req: NextRequest) {
   const { text, detailLevel, format, tone, includeTldr, userId } = await req.json();
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+      },
+    }
+  );
 
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY as string);
   const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
@@ -24,23 +37,25 @@ export async function POST(req: NextRequest) {
   const title = await model.generateContent(`Generate a short, descriptive title for this text: ${text}`);
   const titleText = await title.response.text();
 
-  const { data: summaryData, error: summaryError } = await supabase
-    .from('summaries')
-    .insert([{ user_id: userId, title: titleText, content: summary }])
-    .select('id');
+  if (userId) {
+    const { data: summaryData, error: summaryError } = await supabase
+      .from('summaries')
+      .insert([{ user_id: userId, title: titleText, content: summary }])
+      .select('id');
 
-  if (summaryError) {
-    return NextResponse.json({ error: summaryError.message }, { status: 500 });
-  }
+    if (summaryError) {
+      return NextResponse.json({ error: summaryError.message }, { status: 500 });
+    }
 
-  const summaryId = summaryData[0].id;
+    const summaryId = summaryData[0].id;
 
-  const { error: recentError } = await supabase
-    .from('recents')
-    .insert([{ user_id: userId, title: titleText, tool: 'summary', tool_id: summaryId }]);
+    const { error: recentError } = await supabase
+      .from('recents')
+      .insert([{ user_id: userId, title: titleText, tool: 'summary', tool_id: summaryId }]);
 
-  if (recentError) {
-    console.error('Error inserting into recents:', recentError);
+    if (recentError) {
+      console.error('Error inserting into recents:', recentError);
+    }
   }
 
   return NextResponse.json({ summary, title: titleText });

@@ -1,6 +1,6 @@
 // app/api/ai/route.ts
 import {NextResponse} from 'next/server'
-import {runProvider} from '@/lib/providers'
+import {runProvider} from '@/lib/providers/index'
 
 export async function POST(req: Request) {
   try {

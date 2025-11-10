@@ -28,23 +28,25 @@ export async function POST(req: NextRequest) {
   const title = await model.generateContent(`Generate a short, descriptive title for this text: ${text}`);
   const titleText = await title.response.text();
 
-  const { data: flashcardData, error: flashcardError } = await supabase
-    .from('flashcards')
-    .insert([{ user_id: userId, title: titleText, flashcards: flashcardsJson }])
-    .select('id');
+  if (userId) {
+    const { data: flashcardData, error: flashcardError } = await supabase
+      .from('flashcards')
+      .insert([{ user_id: userId, title: titleText, flashcards: flashcardsJson }])
+      .select('id');
 
-  if (flashcardError) {
-    return NextResponse.json({ error: flashcardError.message }, { status: 500 });
-  }
+    if (flashcardError) {
+      return NextResponse.json({ error: flashcardError.message }, { status: 500 });
+    }
 
-  const flashcardId = flashcardData[0].id;
+    const flashcardId = flashcardData[0].id;
 
-  const { error: recentError } = await supabase
-    .from('recents')
-    .insert([{ user_id: userId, title: titleText, tool: 'flashcard', tool_id: flashcardId }]);
+    const { error: recentError } = await supabase
+      .from('recents')
+      .insert([{ user_id: userId, title: titleText, tool: 'flashcard', tool_id: flashcardId }]);
 
-  if (recentError) {
-    console.error('Error inserting into recents:', recentError);
+    if (recentError) {
+      console.error('Error inserting into recents:', recentError);
+    }
   }
 
   return NextResponse.json({ flashcards: flashcardsJson, title: titleText });

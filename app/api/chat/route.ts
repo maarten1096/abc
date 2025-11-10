@@ -1,27 +1,30 @@
 
-import { streamText, StreamingTextResponse } from 'ai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { OpenAIStream, StreamingTextResponse } from 'ai';
+import { Configuration, OpenAIApi } from 'openai-edge';
 
+// Create an OpenAI API client (that uses browser friendly fetch)
+const config = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(config);
+
+// IMPORTANT! Set the runtime to edge
 export const runtime = 'edge';
 
 export async function POST(req: Request) {
+  // Extract the `messages` from the body of the request
   const { messages } = await req.json();
 
-  // Assuming you have the GOOGLE_API_KEY in your environment variables
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY as string);
-  const model = genAI.getGenerativeModel({ model: "gemini-pro"});
-
-  // A more robust way to handle the streaming content
-  const stream = await model.generateContentStream(messages.map((m: any) => m.content).join('\n'));
-
-  const aiStream = new ReadableStream({
-    async start(controller) {
-      for await (const chunk of stream) {
-        controller.enqueue(chunk.text());
-      }
-      controller.close();
-    },
+  // Request the OpenAI API for a streaming chat completion given the prompt
+  const response = await openai.createChatCompletion({
+    model: 'gpt-3.5-turbo',
+    stream: true,
+    messages,
   });
 
-  return new StreamingTextResponse(aiStream);
+  // Convert the response into a friendly text-stream
+  const stream = OpenAIStream(response);
+
+  // Respond with the stream
+  return new StreamingTextResponse(stream);
 }

@@ -1,12 +1,11 @@
 // app/api/ai/handle.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { supabaseAdmin } from "@/lib/supabase";
-import { runProvider, streamProvider } from "@/lib/providers";
+import { runProvider, streamProvider } from "@/lib/providers/index";
 import { appendProgress } from "@/lib/progressLog";
 import { v4 as uuidv4 } from "uuid";
 
-const service = supabaseAdmin;
+const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 async function mapAuthToUser(req: NextRequest) {
   // Accept Supabase access token via Authorization: Bearer <token>
@@ -76,13 +75,10 @@ export async function POST(req: NextRequest) {
     // If provider supports streaming we should stream; else just runProvider.
     if (provider === "local" || provider === "openai_stream" || provider === "anthropic_stream") {
       // stream path
-      const stream = await streamProvider(prompt, options, (token) => {
-        // token callback runs for each chunk - in streaming route we'''d flush to client
-        // server-side streaming to client implemented below
-      });
+      const stream = await streamProvider(prompt, provider, options);
 
       // For simplicity in this example: get final text
-      const assistantText = await runProvider(prompt, options);
+      const assistantText = await runProvider(prompt, provider, options);
 
       // insert assistant message
       const { data: assistantMsg } = await service.from("messages").insert({
@@ -99,7 +95,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ assistant: assistantText, conversationId: convId });
     } else {
       // non-streaming provider
-      const assistantText = await runProvider(prompt, options);
+      const assistantText = await runProvider(prompt, provider, options);
 
       const { data: assistantMsg } = await service.from("messages").insert({
         conversation_id: convId,

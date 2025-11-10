@@ -2,7 +2,7 @@
 import OpenAI from "openai";
 const client = new OpenAI({ apiKey: process.env.AI_API_KEY });
 
-export async function runProvider(prompt: string, opts: any = {}) {
+export async function run(prompt: string, opts: any = {}) {
   const model = opts.model || "gpt-4o-mini";
   const response = await client.chat.completions.create({
     model,
@@ -13,10 +13,10 @@ export async function runProvider(prompt: string, opts: any = {}) {
   return response.choices?.[0]?.message?.content ?? "";
 }
 
-export async function streamProvider(prompt: string, opts: any = {}, onToken: (token: string) => void) {
+export async function stream(prompt: string, opts: any = {}, onToken: (token: string) => void) {
   // streaming would be implemented using the streaming features of the SDK or manual SSE
   // For brevity, provide a simple non-streaming fallback
-  const txt = await runProvider(prompt, opts);
+  const txt = await run(prompt, opts);
   onToken(txt);
   return;
 }

@@ -1,31 +1,28 @@
 
 'use client';
 
-import { useState } from 'react';
-import Sidebar from '../components/Sidebar';
-import MainArea from '../components/MainArea';
-import { ThemeProvider } from '../components/ThemeProvider';
+import { useChat } from 'ai/react';
 
-export default function Home() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeTool, setActiveTool] = useState('summary');
-
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
+export default function Chat() {
+  const { messages, input, handleInputChange, handleSubmit } = useChat();
 
   return (
-    <ThemeProvider>
-      <div className="flex h-screen bg-gray-100">
-        <Sidebar
-          isCollapsed={isCollapsed}
-          toggleSidebar={toggleSidebar}
-          activeTool={activeTool}
-          setActiveTool={setActiveTool}
+    <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch">
+      {messages.map(m => (
+        <div key={m.id} className="whitespace-pre-wrap">
+          {m.role === 'user' ? 'User: ' : 'AI: '}
+          {m.content}
+        </div>
+      ))}
+
+      <form onSubmit={handleSubmit}>
+        <input
+          className="fixed bottom-0 w-full max-w-md p-2 mb-8 border border-gray-300 rounded shadow-xl"
+          value={input}
+          placeholder="Say something..."
+          onChange={handleInputChange}
         />
-        <MainArea activeTool={activeTool} />
-      </div>
-    </ThemeProvider>
+      </form>
+    </div>
   );
 }
-
