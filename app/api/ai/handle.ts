@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     // If provider supports streaming we should stream; else just runProvider.
     if (provider === "local" || provider === "openai_stream" || provider === "anthropic_stream") {
       // stream path
-      const stream = await streamProvider(prompt, provider, options);
+      await streamProvider(prompt, provider, options, (token: string) => {});
 
       // For simplicity in this example: get final text
       const assistantText = await runProvider(prompt, provider, options);

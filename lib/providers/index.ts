@@ -10,15 +10,15 @@ const providers = {
 };
 
 export async function runProvider(prompt: string, provider: string, opts: any) {
-  if (!providers[provider]) {
+  if (!providers[provider as keyof typeof providers]) {
     throw new Error(`Unknown provider: ${provider}`);
   }
-  return providers[provider].run(prompt, opts);
+  return providers[provider as keyof typeof providers].run(prompt, opts);
 }
 
-export async function streamProvider(prompt: string, provider: string, opts: any) {
-  if (!providers[provider]) {
+export async function streamProvider(prompt: string, provider: string, opts: any, onToken: (token: string) => void) {
+  if (!providers[provider as keyof typeof providers]) {
     throw new Error(`Unknown provider: ${provider}`);
   }
-  return providers[provider].stream(prompt, opts);
+  return providers[provider as keyof typeof providers].stream(prompt, opts, onToken);
 }

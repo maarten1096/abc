@@ -1,15 +1,18 @@
-
-- Implemented a complete UI overhaul to create a ChatGPT-style layout.
-- Refactored the `Sidebar`, `ProfileMenu`, and `MainArea` components to create the new layout.
-- Replaced placeholder icons with proper icons from the `react-icons` library.
-- Removed the login requirement for now.
-- The next step will be to re-implement the user authentication and profile management features within the new design.
-- Re-implemented user authentication and profile management features.
-- Updated the `ProfileMenu` component to handle user sessions and login/logout functionality.
-- Created a new login page with a Supabase UI Auth component.
-- The next step will be to merge the local data with the remote data after the user logs in.
-- Implemented local data merging for the `SummaryTool`.
-- Anonymous users can now generate summaries, which are stored in `localStorage`.
-- When a user logs in, any locally stored summaries are automatically saved to their account.
-- Applied the same local data merging logic to the `FlashcardTool` and `QuizTool`.
-- Anonymous users can now generate flashcards and quizzes and save them to their account after logging in.
+- Created backend API endpoints:
+  - POST /api/items/create
+  - GET /api/items/recent
+  - POST /api/items/search
+  - POST /api/items/import
+  - POST /api/embeddings/generate
+- Set up global state management with Zustand (`lib/store.ts`).
+- Created main UI components directory (`components`).
+- Created the main layout (`app/layout.tsx`) and page (`app/page.tsx`).
+- Created the `components/sidebar` directory and all its components:
+  - `index.tsx`
+  - `header.tsx`
+  - `navigation.tsx`
+  - `recent-items.tsx`
+  - `user-profile.tsx`
+- Created the `components/main-area` directory and its components:
+  - `index.tsx`
+  - `summary-tool.tsx`

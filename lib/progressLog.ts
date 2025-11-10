@@ -1,7 +1,7 @@
 // lib/progressLog.ts
 import fs from "fs/promises";
 import path from "path";
-import { supabaseAdmin } from "./supabase";
+// import { supabaseAdmin } from "./supabase";
 
 const LOG_PATH = process.env.PROGRESS_FILE_PATH || null;
 
@@ -37,6 +37,7 @@ async function flushQueue() {
       }
     }
     // write to Supabase dev logs
+    /*
     try {
       await supabaseAdmin.from("developer_progress_logs").insert({
         user_id: entry.userId,
@@ -48,6 +49,7 @@ async function flushQueue() {
     } catch (e) {
       console.error("Failed to insert developer_progress_logs:", e);
     }
+    */
   }
   flushing = false;
 }

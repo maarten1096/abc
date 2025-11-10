@@ -1,28 +1,19 @@
 
 'use client';
 
-import { useChat } from 'ai/react';
+import { Sidebar } from '@/components/sidebar';
+import { MainArea } from '@/components/main-area';
+import { useUIStore } from '@/lib/store';
 
-export default function Chat() {
-  const { messages, input, handleInputChange, handleSubmit } = useChat();
+export default function Home() {
+  const { sidebarCollapsed } = useUIStore();
 
   return (
-    <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch">
-      {messages.map(m => (
-        <div key={m.id} className="whitespace-pre-wrap">
-          {m.role === 'user' ? 'User: ' : 'AI: '}
-          {m.content}
+    <main className="flex h-screen bg-white">
+        <Sidebar />
+        <div className={`flex flex-col flex-1 transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+            <MainArea />
         </div>
-      ))}
-
-      <form onSubmit={handleSubmit}>
-        <input
-          className="fixed bottom-0 w-full max-w-md p-2 mb-8 border border-gray-300 rounded shadow-xl"
-          value={input}
-          placeholder="Say something..."
-          onChange={handleInputChange}
-        />
-      </form>
-    </div>
+    </main>
   );
 }

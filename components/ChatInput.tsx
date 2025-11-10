@@ -4,9 +4,10 @@
 import { useChat } from 'ai/react';
 import { useTheme } from './ThemeProvider';
 import { useRef, useEffect, useState } from 'react';
+import { ArrowUp, Paperclip } from 'lucide-react';
 
 export default function ChatInput() {
-  const { messages, append } = useChat();
+  const { append } = useChat();
   const { theme } = useTheme();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState('');
@@ -30,32 +31,39 @@ export default function ChatInput() {
     setInput('');
   };
 
-  return (
-    <div>
-      <div style={{ backgroundColor: theme.main, color: theme.accent }}>
-        {messages.map(m => (
-          <div key={m.id}>
-            {m.role === 'user' ? 'User: ' : 'AI: '}
-            {m.content}
-          </div>
-        ))}
-      </div>
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e as any);
+    }
+  };
 
-      <form onSubmit={handleSubmit} className="p-4" style={{ backgroundColor: theme.main }}>
+  return (
+    <form onSubmit={handleSubmit} className="p-4" style={{ backgroundColor: theme.main }}>
+      <div 
+        className="flex items-center p-2 rounded-lg"
+        style={{ border: `1.5px solid ${theme.accent}` }}
+      >
+        <button type="button" className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full">
+          <Paperclip size={20} style={{ color: theme.accent }}/>
+        </button>
         <textarea
           ref={textareaRef}
-          className="w-full p-2 rounded-md resize-none overflow-y-auto bg-transparent"
+          className="flex-1 p-2 bg-transparent resize-none overflow-y-auto focus:outline-none"
           style={{
-            border: `1.5px solid ${theme.accent}`,
             color: theme.accent,
-            maxHeight: '12rem', // 6 lines
+            maxHeight: '12rem', // approx 6 lines
           }}
           placeholder="Type your message..."
           value={input}
           onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
           rows={1}
         />
-      </form>
-    </div>
+        <button type="submit" className="p-2 bg-blue-500 hover:bg-blue-600 rounded-full">
+          <ArrowUp size={20} className="text-white" />
+        </button>
+      </div>
+    </form>
   );
 }

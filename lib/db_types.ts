@@ -1,1 +1,97 @@
-export type Json = | string | number | boolean | null | { [key: string]: Json } | Json[] export interface Database { public: { Tables: { chats: { Row: { content: Json | null created_at: string | null id: string mode: string | null title: string | null updated_at: string | null user_id: string } Insert: { content?: Json | null created_at?: string | null id?: string mode?: string | null title?: string | null updated_at?: string | null user_id: string } Update: { content?: Json | null created_at?: string | null id?: string mode?: string | null title?: string | null updated_at?: string | null user_id?: string } } recents: { Row: { created_at: string | null id: string ref_id: string | null title: string | null tool_used: string | null type: string | null user_id: string } Insert: { created_at?: string | null id?: string ref_id?: string | null title?: string | null tool_used?: string | null type?: string | null user_id: string } Update: { created_at?: string | null id?: string ref_id?: string | null title?: string | null tool_used?: string | null type?: string | null user_id?: string } } users: { Row: { avatar_url: string | null created_at: string | null display_name: string | null email: string | null id: string } Insert: { avatar_url?: string | null created_at?: string | null display_name?: string | null email?: string | null id: string } Update: { avatar_url?: string | null created_at?: string | null display_name?: string | null email?: string | null id?: string } } } Views: { [_ in never]: never } Functions: { [_ in never]: never } Enums: { [_ in never]: never } } }
+export type Json = | string | number | boolean | null | { [key: string]: Json } | Json[];
+export interface Database {
+  public: {
+    Tables: {
+      chats: {
+        Row: {
+          content: Json | null;
+          created_at: string | null;
+          id: string;
+          mode: string | null;
+          title: string | null;
+          updated_at: string | null;
+          user_id: string;
+        }
+        Insert: {
+          content?: Json | null;
+          created_at?: string | null;
+          id?: string;
+          mode?: string | null;
+          title?: string | null;
+          updated_at?: string | null;
+          user_id: string;
+        }
+        Update: {
+          content?: Json | null;
+          created_at?: string | null;
+          id?: string;
+          mode?: string | null;
+          title?: string | null;
+          updated_at?: string | null;
+          user_id?: string;
+        }
+      }
+      recents: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          ref_id: string | null;
+          title: string | null;
+          tool_used: string | null;
+          type: string | null;
+          user_id: string;
+        }
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          ref_id?: string | null;
+          title?: string | null;
+          tool_used?: string | null;
+          type?: string | null;
+          user_id: string;
+        }
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          ref_id?: string | null;
+          title?: string | null;
+          tool_used?: string | null;
+          type?: string | null;
+          user_id?: string;
+        }
+      }
+      users: {
+        Row: {
+          avatar_url: string | null;
+          created_at: string | null;
+          display_name: string | null;
+          email: string | null;
+          id: string;
+        }
+        Insert: {
+          avatar_url?: string | null;
+          created_at?: string | null;
+          display_name?: string | null;
+          email?: string | null;
+          id: string;
+        }
+        Update: {
+          avatar_url?: string | null;
+          created_at?: string | null;
+          display_name?: string | null;
+          email?: string | null;
+          id?: string;
+        }
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+  }
+}
