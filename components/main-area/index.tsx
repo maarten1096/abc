@@ -6,12 +6,12 @@ import { SummaryTool } from './summary-tool';
 // Import other tools as they are created
 
 export function MainArea() {
-    const { activeTool } = useUIStore();
+    const { activeTool, summary, animation } = useUIStore();
 
     const renderTool = () => {
         switch (activeTool) {
             case 'summary':
-                return <SummaryTool />;
+                return <SummaryTool summary={summary} animation={animation} />;
             // Add cases for other tools
             default:
                 return <div>Select a tool</div>;

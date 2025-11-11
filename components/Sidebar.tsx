@@ -2,12 +2,12 @@
 'use client';
 import React, { useState } from 'react';
 import { BookOpen, FileText, List, PlusSquare, UploadCloud, ChevronsRight, ChevronsLeft, HelpCircle } from 'lucide-react';
-import Link from 'next/link';
-import { Tool } from '@/app/page';
+
+export type Tool = 'new' | 'summary' | 'quiz' | 'flashcards' | 'recents' | 'import';
 
 export default function Sidebar({ active, setActive }: { active?: string, setActive: (tool: Tool) => void }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const items = [
+  const items: {id: Tool, label: string, icon: React.ElementType, href: string}[] = [
     { id: 'new', label: 'New', icon: PlusSquare, href: '/' },
     { id: 'summary', label: 'Summary', icon: FileText, href: '/mode/summary' },
     { id: 'quiz', label: 'Quiz', icon: HelpCircle, href: '/mode/quiz' },
@@ -32,7 +32,7 @@ export default function Sidebar({ active, setActive }: { active?: string, setAct
           return (
             <button
               key={it.id}
-              onClick={() => handleItemClick(it.id as Tool)}
+              onClick={() => handleItemClick(it.id)}
               className={`w-full h-12 flex items-center justify-start rounded-xl p-3 transition-colors duration-200 ${
                 isActive
                   ? 'bg-slate-100 dark:bg-slate-800'

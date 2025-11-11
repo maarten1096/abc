@@ -1,36 +1,34 @@
 
--- Create the search_items RPC function
-CREATE OR REPLACE FUNCTION search_items(
+create or replace function search_items(
   query_embedding vector(1536),
-  match_threshold float,
-  match_count int,
-  p_user_id uuid,
-  p_type_filter text[]
+  type_filter text[],
+  match_limit int
 )
-RETURNS TABLE (
-  item_id uuid,
+returns table (
+  id uuid,
   title text,
   description text,
   type text,
-  similarity float,
-  snippet text
+  created_at timestamptz,
+  similarity float
 )
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    ie.item_id,
+as $$
+begin
+  return query
+  select
+    ui.id,
     ui.title,
     ui.description,
     ui.type,
-    1 - (ie.embedding <=> query_embedding) AS similarity,
-    LEFT(ui.content->>'text', 200) as snippet
-  FROM item_embeddings AS ie
-  JOIN user_items AS ui ON ie.item_id = ui.id
-  WHERE ie.user_id = p_user_id
-  AND (p_type_filter IS NULL OR ui.type = ANY(p_type_filter))
-  AND (1 - (ie.embedding <=> query_embedding)) > match_threshold
-  ORDER BY similarity DESC
-  LIMIT match_count;
-END;
-$$ LANGUAGE plpgsql;
+    ui.created_at,
+    1 - (ie.embedding <=> query_embedding) as similarity
+  from item_embeddings as ie
+  join user_items as ui on ie.item_id = ui.id
+  where
+    (type_filter is null or ui.type = any(type_filter))
+  order by
+    ie.embedding <=> query_embedding
+  limit
+    match_limit;
+end;
+$$ language plpgsql;

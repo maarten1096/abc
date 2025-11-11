@@ -2,38 +2,107 @@
 'use client';
 
 import { useState } from 'react';
-import { useTheme } from './ThemeProvider';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
-export default function ImportModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  const { theme } = useTheme();
-  const [searchTerm, setSearchTerm] = useState('');
+interface SearchResult {
+  id: string;
+  title: string;
+  description: string;
+}
 
-  if (!isOpen) return null;
+export function ImportModal() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleSearch = async () => {
+    if (!query) return;
+    setLoading(true);
+    try {
+      const response = await fetch('/api/items/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setResults(data);
+      }
+    } catch (error) {
+      console.error('Failed to search items:', error);
+    }
+    setLoading(false);
+  };
+
+  const handleSelect = (item: SearchResult) => {
+    // For now, just log the selected item
+    console.log('Selected item:', item);
+    setIsOpen(false);
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div 
-        className="p-8 rounded-lg w-full max-w-2xl"
-        style={{ backgroundColor: theme.main, border: `1.5px solid ${theme.accent}` }}
-      >
-        <h2 className="text-2xl font-bold mb-4" style={{ color: theme.accent }}>Import Existing Item</h2>
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search for items..."
-          className="w-full p-2 rounded-md bg-transparent mb-4"
-          style={{ border: `1.5px solid ${theme.accent}`, color: theme.accent }}
-        />
-        {/* Search results will be displayed here */}
-        <button 
-          onClick={onClose} 
-          className="mt-4 p-2 rounded-md text-white"
-          style={{ backgroundColor: theme.blue }}
-        >
-          Close
-        </button>
-      </div>
-    </div>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">Import</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Import</DialogTitle>
+          <DialogDescription>
+            Import a previously created item by searching for it.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="query" className="text-right">
+              Search
+            </Label>
+            <Input
+              id="query"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          {loading && <p>Searching...</p>}
+          {results.length > 0 && (
+            <div className="-mx-2 mt-4 max-h-64 overflow-y-auto">
+              <p className="px-2 text-sm font-semibold text-gray-500">Results</p>
+              <div className="space-y-1 p-2">
+                {results.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => handleSelect(item)}
+                    className="cursor-pointer rounded-md p-2 hover:bg-gray-100"
+                  >
+                    <p className="font-medium">{item.title}</p>
+                    <p className="text-sm text-gray-500">{item.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button onClick={handleSearch} disabled={loading}>
+            {loading ? 'Searching...' : 'Find Matches'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

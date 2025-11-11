@@ -3,24 +3,15 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
-export async function POST(request: Request) {
-  const { title, description, type, content, file_id, save_embedding } = await request.json();
+export async function POST(req: Request) {
   const supabase = createRouteHandlerClient({ cookies });
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return new NextResponse(
-      JSON.stringify({ ok: false, message: 'Unauthorized' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
-    );
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Generate content_hash
-  const contentString = JSON.stringify(content);
-  const contentHash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(contentString));
-  const contentHashString = Array.from(new Uint8Array(contentHash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const { title, description, type, content, file_id } = await req.json();
 
   const { data, error } = await supabase
     .from('user_items')
@@ -32,32 +23,22 @@ export async function POST(request: Request) {
         type,
         content,
         file_id,
-        content_hash: contentHashString,
       },
     ])
-    .select('id, title, description, type, created_at')
-    .single();
+    .select();
 
   if (error) {
-    console.error('Error creating item:', error);
-    return new NextResponse(
-        JSON.stringify({ ok: false, message: 'Failed to create item', error: error.message }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  if (save_embedding && data) {
-    // In a real-world scenario, this would be a durable job queue.
-    // Here we'll just fire-and-forget an API call to our own embedding endpoint.
-    fetch(`${process.env.NEXT_PUBLIC_URL}/api/embeddings/generate`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_KEY}` // Secure call from backend to backend
-        },
-        body: JSON.stringify({ item_id: data.id }),
-    });
-  }
+  // Trigger embedding generation asynchronously
+  fetch('/api/embeddings/generate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ item_id: data[0].id }),
+  });
 
-  return NextResponse.json({ ok: true, item: data });
+  return NextResponse.json(data[0]);
 }

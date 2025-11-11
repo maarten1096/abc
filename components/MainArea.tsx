@@ -4,7 +4,7 @@
 import SummaryTool from './SummaryTool';
 import QuizTool from './QuizTool';
 import FlashcardTool from './FlashcardTool';
-import ChatInput from './ChatInput';
+import { ChatInput } from './ChatInput';
 import { useTheme } from './ThemeProvider';
 
 // A placeholder for now

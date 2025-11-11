@@ -1,69 +1,93 @@
 
 'use client';
 
-import { useChat } from 'ai/react';
-import { useTheme } from './ThemeProvider';
-import { useRef, useEffect, useState } from 'react';
-import { ArrowUp, Paperclip } from 'lucide-react';
+import { useState } from 'react';
+import TextareaAutosize from 'react-textarea-autosize';
+import { Button } from '@/components/ui/button';
+import { CornerDownLeft, FileImage, Mic } from "lucide-react";
+import { useUIStore } from '@/lib/store';
+import { ImportModal } from '@/components/ImportModal';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 
-export default function ChatInput() {
-  const { append } = useChat();
-  const { theme } = useTheme();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [input, setInput] = useState('');
+export function ChatInput() {
+  const { inputText, setInputText, setSummary } = useUIStore();
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    }
-  }, [input]);
+  const handleGenerateSummary = async () => {
+    if (!inputText.trim()) return;
+    setIsLoading(true);
+    setSummary(''); // Clear previous summary
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
-  };
+    try {
+      const response = await fetch('/api/ai/handle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'summary',
+          input_text: inputText,
+          options: {
+            animation: true // You can control this from the store later
+          }
+        }),
+      });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    append({ role: 'user', content: input });
-    setInput('');
-  };
+      if (!response.ok || !response.body) {
+        throw new Error('Failed to get streaming response.');
+      }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e as any);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let streamedText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        streamedText += chunk;
+        setSummary(streamedText);
+      }
+
+    } catch (error) {
+      console.error('Failed to generate summary:', error);
+      setSummary('Error: Could not generate summary.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4" style={{ backgroundColor: theme.main }}>
-      <div 
-        className="flex items-center p-2 rounded-lg"
-        style={{ border: `1.5px solid ${theme.accent}` }}
-      >
-        <button type="button" className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full">
-          <Paperclip size={20} style={{ color: theme.accent }}/>
-        </button>
-        <textarea
-          ref={textareaRef}
-          className="flex-1 p-2 bg-transparent resize-none overflow-y-auto focus:outline-none"
-          style={{
-            color: theme.accent,
-            maxHeight: '12rem', // approx 6 lines
-          }}
-          placeholder="Type your message..."
-          value={input}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          rows={1}
-        />
-        <button type="submit" className="p-2 bg-blue-500 hover:bg-blue-600 rounded-full">
-          <ArrowUp size={20} className="text-white" />
-        </button>
-      </div>
-    </form>
+    <div className="flex items-center gap-2">
+      <Dialog>
+        <div className="relative flex-grow">
+            <TextareaAutosize
+                maxRows={15}
+                minRows={1}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Enter text to summarize..."
+                spellCheck={false}
+                value={inputText}
+                className="w-full resize-none rounded-2xl border border-input bg-background p-4 pr-12 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={isLoading}
+            />
+        </div>
+
+        <div className="flex items-center gap-3">
+            <Button size="icon" type="submit" variant="secondary" onClick={handleGenerateSummary} disabled={isLoading}>
+                <CornerDownLeft className="size-5" />
+            </Button>
+
+            <DialogTrigger asChild>
+              <Button size="icon" variant="outline" disabled={isLoading}>
+                  <FileImage className="size-5" />
+              </Button>
+            </DialogTrigger>
+
+            <Button size="icon" variant="outline" disabled={isLoading}>
+                <Mic className="size-5" />
+            </Button>
+        </div>
+        <ImportModal />
+      </Dialog>
+    </div>
   );
 }
