@@ -2,30 +2,34 @@
 'use client';
 
 import { useState } from 'react';
-import { useUIStore } from '@/lib/store';
+import { useGenerationStore } from '@/lib/generationStore';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 
 export function FlashcardTool() {
-    const { flashcards } = useUIStore();
+    const { flashcards, isLoading } = useGenerationStore();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
 
-    if (!flashcards || !flashcards.cards || flashcards.cards.length === 0) {
+    if (isLoading && (!flashcards || flashcards.length === 0)) {
+        return <div className="text-center text-gray-500">Generating flashcards...</div>;
+    }
+
+    if (!flashcards || flashcards.length === 0) {
         return <div className="text-center text-gray-500">Generate flashcards to get started!</div>;
     }
 
     const handleNext = () => {
         setIsFlipped(false);
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % flashcards.cards.length);
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % flashcards.length);
     };
 
     const handlePrev = () => {
         setIsFlipped(false);
-        setCurrentIndex((prevIndex) => (prevIndex - 1 + flashcards.cards.length) % flashcards.cards.length);
+        setCurrentIndex((prevIndex) => (prevIndex - 1 + flashcards.length) % flashcards.length);
     };
 
-    const currentCard = flashcards.cards[currentIndex];
+    const currentCard = flashcards[currentIndex];
 
     return (
         <div className="flex flex-col items-center">
@@ -52,7 +56,7 @@ export function FlashcardTool() {
                     <ArrowLeft className="h-6 w-6" />
                 </Button>
                 <span className='text-xl font-bold'>
-                    {currentIndex + 1} / {flashcards.cards.length}
+                    {currentIndex + 1} / {flashcards.length}
                 </span>
                 <Button onClick={handleNext} size="icon" variant="outline">
                     <ArrowRight className="h-6 w-6" />
@@ -65,11 +69,3 @@ export function FlashcardTool() {
         </div>
     );
 }
-
-// Add some basic CSS for the 3D effect in your global CSS file if it's not already there:
-/*
-.perspective-1000 { perspective: 1000px; }
-.transform-style-3d { transform-style: preserve-3d; }
-.backface-hidden { backface-visibility: hidden; }
-.rotate-y-180 { transform: rotateY(180deg); }
-*/
